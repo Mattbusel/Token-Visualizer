@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+
+PackageIdentifier: Mattbusel.TokenVisualizer
+PackageVersion: 0.3.0
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+- RelativeFilePath: token-visualizer-v0.3.0-windows-x86_64\token-visualizer.exe
+  PortableCommandAlias: token-visualizer
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/Mattbusel/Token-Visualizer/releases/download/v0.3.0/token-visualizer-v0.3.0-windows-x86_64.zip
+  InstallerSha256: 45D0A5AF8B7DBECC7B22098B1946BF9E5EFB7F2963B5527EF99AF00B0CD9668A
+ManifestType: installer
+ManifestVersion: 1.6.0

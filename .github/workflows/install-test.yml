@@ -1,0 +1,68 @@
+name: Install test
+
+# Runs every documented one-line install on real Windows, macOS and Linux
+# runners against the published release, then runs the installed command.
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths: ["install.sh", "install.ps1", ".github/workflows/install-test.yml"]
+
+jobs:
+  script-unix:
+    name: install.sh on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-latest, macos-14, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install with the one-liner (from this commit's install.sh)
+        run: sh install.sh
+      - name: Run it
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          token-visualizer --version
+
+  script-windows:
+    name: install.ps1 on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install with the one-liner (from this commit's install.ps1)
+        shell: powershell
+        run: Get-Content -Raw install.ps1 | Invoke-Expression
+      - name: Run it
+        shell: powershell
+        run: |
+          $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + $env:Path
+          token-visualizer --version
+
+  homebrew:
+    name: Homebrew on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15-intel, ubuntu-latest]
+    steps:
+      - uses: Homebrew/actions/setup-homebrew@master
+      - run: brew install mattbusel/tap/token-visualizer
+      - run: brew test mattbusel/tap/token-visualizer
+      - run: token-visualizer --version
+
+  scoop:
+    name: Scoop on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Install Scoop, add the bucket, install
+        shell: pwsh
+        run: |
+          iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
+          $env:Path = "$env:USERPROFILE\scoop\shims;$env:Path"
+          scoop bucket add mattbusel https://github.com/Mattbusel/scoop-bucket
+          scoop install mattbusel/token-visualizer
+          token-visualizer --version
