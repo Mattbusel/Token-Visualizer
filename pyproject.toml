@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "token-visualizer"
+version = "0.2.0"
+description = "See how an LLM tokenizer splits your prompt, which lines cost the most, and what to cut"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Matthew Busel" }]
+dependencies = ["tiktoken>=0.4"]
+
+[project.optional-dependencies]
+hf = ["transformers>=4.30"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+token-visualizer = "token_visualizer:main"
+
+[project.urls]
+Homepage = "https://github.com/Mattbusel/Token-Visualizer"
+
+[tool.setuptools]
+py-modules = ["token_visualizer"]

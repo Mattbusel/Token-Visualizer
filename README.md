@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Mattbusel/Token-Visualizer/actions/workflows/ci.yml/badge.svg)](https://github.com/Mattbusel/Token-Visualizer/actions/workflows/ci.yml)
 
-A single-file Python script that shows how an LLM tokenizer splits your prompt, which lines cost the most tokens, and which wordy phrases you can cut.
+A small Python tool that shows how an LLM tokenizer splits your prompt, which lines cost the most tokens, and which wordy phrases you can cut.
 
 Tokens are what you pay for and what fills the context window, but most prompt editing happens blind. Paste a prompt in or point the script at a file and you get a per-line token count, the exact token boundaries, and a short list of concrete edits.
 
@@ -15,9 +15,33 @@ Tokens are what you pay for and what fills the context window, but most prompt e
 - **Rough cost estimate** at a fixed $0.03 per 1K input tokens (old GPT-4 list price), plus a flat 10% savings estimate.
 - Colors switch off automatically when output is not a terminal.
 
-## Quick start
+## Install
 
-Python 3.7+. Both tokenizer libraries are optional.
+### Download (no Python needed)
+
+Grab a prebuilt executable from the [latest release](https://github.com/Mattbusel/Token-Visualizer/releases/latest):
+
+| OS | File |
+| --- | --- |
+| Windows | `token-visualizer-vX.Y.Z-windows-x86_64.zip` |
+| macOS, Apple Silicon | `token-visualizer-vX.Y.Z-macos-arm64.tar.gz` |
+| macOS, Intel | `token-visualizer-vX.Y.Z-macos-x86_64.tar.gz` |
+| Linux | `token-visualizer-vX.Y.Z-linux-x86_64.tar.gz` |
+
+On Windows you can double-click `token-visualizer.exe`, paste your prompt, then press Ctrl+Z and Enter. Or run it from a terminal: `token-visualizer prompt.txt -m gpt-4`. The GPT tokenizers are built in, so it works offline. The download does not include Hugging Face tokenizers; for those, install from source with `transformers`.
+
+The binaries are unsigned. Windows SmartScreen may say "unknown publisher": click **More info**, then **Run anyway**. On macOS, right-click the binary and choose **Open** the first time, or run `xattr -d com.apple.quarantine token-visualizer`.
+
+### pipx
+
+```bash
+pipx install git+https://github.com/Mattbusel/Token-Visualizer
+token-visualizer prompt.txt
+```
+
+### From source
+
+Python 3.8+. Both tokenizer libraries are optional.
 
 ```bash
 git clone https://github.com/Mattbusel/Token-Visualizer
@@ -26,22 +50,22 @@ pip install tiktoken            # recommended, for GPT tokenization
 pip install transformers        # optional, for Hugging Face tokenizers
 
 # Analyze a file
-python "Token Visualizer.py" prompt.txt
+python token_visualizer.py prompt.txt
 
 # Or paste text interactively, then Ctrl+D (Ctrl+Z then Enter on Windows)
-python "Token Visualizer.py"
+python token_visualizer.py
+
+# Skip the tokenizer menu, or pipe text in
+python token_visualizer.py prompt.txt -m gpt-4o
+cat prompt.txt | python token_visualizer.py -m gpt-4
 ```
 
-The script then asks which tokenizer to use: `gpt-4`, `gpt-3.5-turbo`, `claude-3-sonnet` or `llama-2-7b`.
+Without `-m`, the script asks which tokenizer to use: `gpt-4`, `gpt-4o`, `gpt-3.5-turbo`, `claude-3-sonnet` or `llama-2-7b`. Piped input defaults to `gpt-4`. The old `python "Token Visualizer.py"` command still works.
 
 ### Using it from Python
 
-The file name contains a space, so import it with `importlib`:
-
 ```python
-import importlib.util
-spec = importlib.util.spec_from_file_location("tv", "Token Visualizer.py")
-tv = importlib.util.module_from_spec(spec); spec.loader.exec_module(tv)
+import token_visualizer as tv
 
 viz = tv.TokenVisualizer("gpt-4")
 stats = viz.tokenize("Your prompt here")
@@ -72,7 +96,6 @@ viz.suggest_compression("Your prompt here")
 - Anthropic does not publish a Claude tokenizer, and `claude-3-sonnet` and `llama-2-7b` are not Hugging Face model IDs, so those two choices fall back to whitespace splitting. For real counts outside OpenAI models, pass a valid Hugging Face model ID to `TokenVisualizer(...)` in code.
 - With neither library installed, everything uses whitespace splitting, which undercounts real tokens.
 - The cost figure uses a hardcoded historical price and is only a rough guide.
-- There is no test suite; CI installs dependencies and runs pytest if tests exist.
 
 ## Related
 
