@@ -1,0 +1,162 @@
+name: Release
+
+# Push a tag like v0.2.0 to build single-file executables for Windows, macOS
+# and Linux with PyInstaller and attach them to a GitHub Release.
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  # Build-only dry run when this workflow itself changes (nothing is released).
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v0.2.0"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  BIN: token-visualizer
+  TAG: ${{ github.event_name == 'pull_request' && 'pr-test' || github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows-x86_64
+          - os: macos-14
+            target: macos-arm64
+          - os: macos-15-intel
+            target: macos-x86_64
+          - os: ubuntu-22.04
+            target: linux-x86_64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.sha || env.TAG }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: python -m pip install . "pyinstaller>=6.10"
+
+      # tiktoken downloads its encodings on first use. Ship them inside the
+      # executable so it works offline and never waits on a download.
+      - name: Fetch tiktoken encodings
+        shell: bash
+        run: |
+          TIKTOKEN_CACHE_DIR="$PWD/tiktoken_cache" python -c "import tiktoken; [tiktoken.get_encoding(n) for n in ('cl100k_base', 'o200k_base', 'p50k_base', 'r50k_base')]"
+          ls -l tiktoken_cache
+
+      - name: Build
+        shell: bash
+        run: >
+          python -m PyInstaller --noconfirm --onefile --console --name "$BIN" --paths .
+          --add-data "tiktoken_cache:tiktoken_cache"
+          --hidden-import tiktoken_ext --hidden-import tiktoken_ext.openai_public
+          --exclude-module transformers --exclude-module torch
+          token_visualizer.py
+
+      - name: Smoke test the bundled binary (offline)
+        shell: bash
+        env:
+          # A dead proxy: any attempt to download an encoding fails the test.
+          HTTPS_PROXY: http://127.0.0.1:9
+          HTTP_PROXY: http://127.0.0.1:9
+        run: |
+          exe="dist/$BIN"; [ "$RUNNER_OS" = "Windows" ] && exe="$exe.exe"
+          "$exe" --version
+          printf 'hello world' | "$exe" -m gpt-4 | tee out.txt
+          grep -q "Total tokens: 2" out.txt
+          printf 'In order to help you, due to the fact that you asked.\n' > prompt.txt
+          "$exe" prompt.txt --model gpt-4o | tee out.txt
+          grep -q "TOKEN ANALYSIS - GPT-4O" out.txt
+          grep -q "Verbose phrases found" out.txt
+
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          name="$BIN-$TAG-${{ matrix.target }}"
+          mkdir "$name"
+          cp "dist/$BIN" README.md LICENSE "$name/"
+          tar czf "$name.tar.gz" "$name"
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $name = "$env:BIN-$env:TAG-${{ matrix.target }}"
+          New-Item -ItemType Directory $name | Out-Null
+          Copy-Item "dist/$env:BIN.exe", README.md, LICENSE $name
+          Compress-Archive -Path $name -DestinationPath "$name.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            ${{ env.BIN }}-*.tar.gz
+            ${{ env.BIN }}-*.zip
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums and release notes
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          cd ..
+          version="${TAG#v}"
+          # The CHANGELOG section for this version, without its heading.
+          awk -v v="$version" '
+            /^## / { if (found) exit; if (index($0, "[" v "]") || index($0, " " v)) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          {
+            echo
+            echo "### Downloads"
+            echo
+            echo "- Windows: \`$BIN-$TAG-windows-x86_64.zip\`"
+            echo "- macOS Apple Silicon: \`$BIN-$TAG-macos-arm64.tar.gz\`"
+            echo "- macOS Intel: \`$BIN-$TAG-macos-x86_64.tar.gz\`"
+            echo "- Linux: \`$BIN-$TAG-linux-x86_64.tar.gz\`"
+            echo
+            echo "The binaries are unsigned. Windows SmartScreen may say \"unknown publisher\": click More info, then Run anyway. On macOS, right-click the binary and choose Open the first time. Checksums are in \`SHA256SUMS.txt\`."
+          } >> notes.md
+          cat notes.md
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ls -l dist
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --title "$BIN $TAG" --notes-file notes.md
+          fi

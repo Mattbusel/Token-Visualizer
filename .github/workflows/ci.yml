@@ -6,16 +6,26 @@ on:
     branches: [ main ]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Install dependencies
+          python-version: ${{ matrix.python-version }}
+      - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || true
-          pip install pytest || true
-      - name: Run tests
-        run: pytest --tb=short || echo "No tests found"
+          python -m pip install ".[dev]"
+      - name: Tests
+        run: python -m pytest -v tests
+      - name: Run the installed command and the legacy script name
+        shell: bash
+        run: |
+          token-visualizer --version
+          printf 'hello world' | token-visualizer -m gpt-4 | grep -q "Total tokens: 2"
+          printf 'hello world' | python "Token Visualizer.py" -m gpt-4 | grep -q "Total tokens: 2"
