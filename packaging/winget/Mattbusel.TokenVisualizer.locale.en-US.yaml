@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+
+PackageIdentifier: Mattbusel.TokenVisualizer
+PackageVersion: 0.3.0
+PackageLocale: en-US
+Publisher: Mattbusel
+PublisherUrl: https://github.com/Mattbusel
+PublisherSupportUrl: https://github.com/Mattbusel/Token-Visualizer/issues
+PackageName: Token Visualizer
+PackageUrl: https://github.com/Mattbusel/Token-Visualizer
+License: MIT
+LicenseUrl: https://github.com/Mattbusel/Token-Visualizer/blob/main/LICENSE
+ShortDescription: "See how a tokenizer splits your prompt and what to cut, with measured savings"
+Description: "Token Visualizer shows how an LLM tokenizer splits your prompt into tokens, which lines cost the most, and which wordy phrases to cut, then re-tokenizes to measure the real savings. GPT tokenizers are built in and work offline."
+Tags:
+- tokens
+- tiktoken
+- llm
+- prompt
+- cli
+ReleaseNotesUrl: https://github.com/Mattbusel/Token-Visualizer/releases/tag/v0.3.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0
