@@ -27,5 +27,6 @@ jobs:
         shell: bash
         run: |
           token-visualizer --version
-          printf 'hello world' | token-visualizer -m gpt-4 | grep -q "Total tokens: 2"
-          printf 'hello world' | python "Token Visualizer.py" -m gpt-4 | grep -q "Total tokens: 2"
+          printf 'hello world' | token-visualizer -m gpt-4 | grep "Total tokens: 2" >/dev/null
+          printf 'hello world' | python "Token Visualizer.py" -m gpt-4 | grep "Total tokens: 2" >/dev/null
+          token-visualizer examples/support-prompt.txt -m gpt-4o | grep "70 → 61 tokens" >/dev/null
