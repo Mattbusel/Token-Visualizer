@@ -49,7 +49,7 @@ jobs:
       matrix:
         os: [macos-14, macos-15-intel, ubuntu-latest]
     steps:
-      - uses: Homebrew/actions/setup-homebrew@master
+      - uses: Homebrew/actions/setup-homebrew@main
       - run: brew install mattbusel/tap/token-visualizer
       - run: brew test mattbusel/tap/token-visualizer
       - run: token-visualizer --version
