@@ -13,7 +13,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 MODEL_OPTIONS = ["gpt-4", "gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet", "llama-2-7b"]
 
@@ -38,7 +38,8 @@ try:
     TIKTOKEN_AVAILABLE = True
 except ImportError:
     TIKTOKEN_AVAILABLE = False
-    print("⚠️  tiktoken not installed. Install with: pip install tiktoken")
+    print("warning: tiktoken is not installed, so GPT counts fall back to whitespace splitting. "
+          "Fix: pip install tiktoken", file=sys.stderr)
 
 # transformers is optional and slow to import, so it is only loaded when a
 # non-GPT tokenizer is actually requested.
@@ -55,14 +56,26 @@ class Colors:
     WHITE = '\033[97m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    DIM = '\033[2m'
     END = '\033[0m'
+    # Backgrounds for the token chips: muted, readable with the default foreground.
+    CHIPS = ['\033[48;5;24m', '\033[48;5;58m', '\033[48;5;89m', '\033[48;5;29m', '\033[48;5;94m']
     
     @classmethod
     def disable(cls):
         """Disable colors for non-terminal output"""
-        for attr in dir(cls):
-            if not attr.startswith('_') and attr != 'disable':
-                setattr(cls, attr, '')
+        cls.enable()
+        cls._saved = {k: v for k, v in vars(cls).items()
+                      if k.isupper() and isinstance(v, (str, list))}
+        for attr in cls._saved:
+            setattr(cls, attr, [''] if attr == 'CHIPS' else '')
+
+    @classmethod
+    def enable(cls):
+        """Undo disable()."""
+        for attr, value in getattr(cls, '_saved', {}).items():
+            setattr(cls, attr, value)
+        cls._saved = {}
 
 @dataclass
 class TokenStats:
@@ -90,11 +103,13 @@ class TokenVisualizer:
                 from transformers import AutoTokenizer
                 return AutoTokenizer.from_pretrained(self.model_name)
             except Exception:
-                print(f"⚠️  Could not load {self.model_name}, using basic word splitting")
+                print(f"warning: could not load a tokenizer named {self.model_name!r}, so counts use "
+                      "whitespace splitting. Pass a tiktoken model (gpt-4o) or a Hugging Face "
+                      "model ID (bert-base-uncased).", file=sys.stderr)
                 return None
         else:
-            print(f"⚠️  No tokenizer available for {self.model_name}, using basic word splitting "
-                  "(pip install transformers for Hugging Face tokenizers)")
+            print(f"warning: no tokenizer available for {self.model_name}, so counts use whitespace "
+                  "splitting. Fix: pip install transformers (for Hugging Face models)", file=sys.stderr)
             return None
     
     def _encode(self, text: str) -> list:
@@ -140,29 +155,27 @@ class TokenVisualizer:
     def visualize_tokens(self, text: str, show_individual: bool = True) -> None:
         """Display comprehensive token analysis"""
         stats = self.tokenize(text)
-        
-        print(f"\n{Colors.BOLD}🔍 TOKEN ANALYSIS - {self.model_name.upper()}{Colors.END}")
-        print("=" * 60)
-        
-        # Overall stats
-        print(f"{Colors.CYAN}📊 SUMMARY:{Colors.END}")
+        width = _term_width()
+
+        print(f"\n{Colors.BOLD}TOKEN ANALYSIS - {self.model_name.upper()}{Colors.END}"
+              f"  {Colors.DIM}{self.tokenizer_label()}{Colors.END}")
+        print(Colors.DIM + "─" * min(width, 72) + Colors.END)
+
+        cost = stats.token_count * 0.00003  # $0.03 per 1K tokens
         print(f"  Total tokens: {Colors.BOLD}{stats.token_count:,}{Colors.END}")
         print(f"  Total characters: {Colors.BOLD}{stats.char_count:,}{Colors.END}")
         print(f"  Efficiency: {Colors.BOLD}{stats.efficiency:.2f}{Colors.END} chars/token")
-        
-        # Cost estimation (rough)
-        gpt4_input_cost = stats.token_count * 0.00003  # $0.03 per 1K tokens
-        print(f"  Est. GPT-4 cost: {Colors.GREEN}${gpt4_input_cost:.4f}{Colors.END}")
-        
+        print(f"  Est. GPT-4 cost: {Colors.GREEN}${cost:.4f}{Colors.END}"
+              f" {Colors.DIM}(at the old $0.03 per 1K input tokens){Colors.END}")
+
         # Line-by-line analysis
-        print(f"\n{Colors.CYAN}📝 LINE BREAKDOWN:{Colors.END}")
+        print(f"\n{Colors.CYAN}{Colors.BOLD}LINE BREAKDOWN{Colors.END}"
+              f"  {Colors.DIM}green < 25 tokens, yellow 25 to 50, red > 50{Colors.END}")
         expensive_lines = []
-        
+        preview_width = max(20, width - 36)
         for i, (line, token_count) in enumerate(stats.line_stats, 1):
             if token_count == 0:
                 continue
-                
-            # Color code based on token density
             if token_count > 50:
                 color = Colors.RED
                 expensive_lines.append((i, line[:50] + "...", token_count))
@@ -170,34 +183,69 @@ class TokenVisualizer:
                 color = Colors.YELLOW
             else:
                 color = Colors.GREEN
-            
             efficiency = len(line) / token_count if token_count > 0 else 0
+            preview = line if len(line) <= preview_width else line[:preview_width - 3] + "..."
             print(f"  {color}Line {i:2d}: {token_count:3d} tokens{Colors.END} "
-                  f"({efficiency:.1f} c/t) {line[:60]}{'...' if len(line) > 60 else ''}")
-        
-        # Highlight expensive sections
+                  f"{Colors.DIM}({efficiency:.1f} c/t){Colors.END} {preview}")
+
         if expensive_lines:
-            print(f"\n{Colors.RED}🚨 EXPENSIVE LINES (>50 tokens):{Colors.END}")
+            print(f"\n{Colors.RED}{Colors.BOLD}EXPENSIVE LINES (>50 tokens){Colors.END}")
             for line_num, preview, tokens in expensive_lines:
                 print(f"  Line {line_num}: {tokens} tokens - {preview}")
-        
-        # Individual token visualization
+
         if show_individual and stats.token_count <= 200:  # Only for shorter texts
-            print(f"\n{Colors.CYAN}🔤 TOKEN BREAKDOWN:{Colors.END}")
-            self._display_token_grid(stats.tokens)
+            if Colors.END:
+                print(f"\n{Colors.CYAN}{Colors.BOLD}TOKEN BOUNDARIES{Colors.END}"
+                      f"  {Colors.DIM}each colored chip is one token{Colors.END}")
+                self._display_token_chips(stats.tokens, width)
+            else:
+                print("\nTOKEN BREAKDOWN:")
+                self._display_token_grid(stats.tokens)
         elif show_individual:
-            print(f"\n{Colors.YELLOW}⚠️  Too many tokens ({stats.token_count}) for individual display{Colors.END}")
-    
+            print(f"\n{Colors.YELLOW}Too many tokens ({stats.token_count}) to show one by one "
+                  f"(the limit is 200).{Colors.END}")
+
+    def tokenizer_label(self) -> str:
+        """Short description of the tokenizer actually in use."""
+        if self.tokenizer is None:
+            return "whitespace split (no real tokenizer loaded)"
+        if TIKTOKEN_AVAILABLE and isinstance(self.tokenizer, tiktoken.Encoding):
+            return f"tiktoken {self.tokenizer.name}"
+        return f"Hugging Face {type(self.tokenizer).__name__}"
+
+    def _display_token_chips(self, tokens: List[str], width: int) -> None:
+        """Print the text with every token on its own colored background."""
+        width = max(30, width - 4)
+        out, col = ["  "], 0
+        gap = " " if self.tokenizer is None else ""  # whitespace split drops the spaces
+        for i, token in enumerate(tokens):
+            bg = Colors.CHIPS[i % len(Colors.CHIPS)]
+            pieces = token.split("\n")
+            for k, piece in enumerate(pieces):
+                shown = piece.replace("\t", "→   ")
+                if k < len(pieces) - 1:
+                    shown += "↵"
+                if col and col + len(shown) > width:
+                    out.append("\n  ")
+                    col = 0
+                if shown:
+                    out.append(f"{bg}{shown}{Colors.END}{gap}")
+                    col += len(shown) + len(gap)
+                if k < len(pieces) - 1:
+                    out.append("\n  ")
+                    col = 0
+        print("".join(out).rstrip())
+
     def _display_token_grid(self, tokens: List[str]) -> None:
         """Display tokens in a readable grid format"""
         line_length = 0
         current_line = []
-        
+
         for i, token in enumerate(tokens):
             # Clean token for display
             clean_token = repr(token)[1:-1]  # Remove quotes, show escapes
             token_display = f"[{i}:{clean_token}]"
-            
+
             if line_length + len(token_display) > 80:
                 print("  " + " ".join(current_line))
                 current_line = [token_display]
@@ -205,78 +253,99 @@ class TokenVisualizer:
             else:
                 current_line.append(token_display)
                 line_length += len(token_display) + 1
-        
+
         if current_line:
             print("  " + " ".join(current_line))
-    
+
+    def compress(self, text: str) -> str:
+        """Apply the mechanical suggestions: phrase swaps and extra whitespace."""
+        for pattern, replacement in VERBOSE_PATTERNS:
+            text = re.sub(pattern, lambda m, r=replacement: _match_case(m.group(0), r),
+                          text, flags=re.IGNORECASE)
+        text = re.sub(r"[ \t]{2,}", " ", text)
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        return text
+
     def suggest_compression(self, text: str) -> None:
         """Analyze text and suggest compression techniques"""
         stats = self.tokenize(text)
         suggestions = []
-        
-        print(f"\n{Colors.BOLD}🎯 COMPRESSION SUGGESTIONS{Colors.END}")
-        print("=" * 60)
-        
+
+        print(f"\n{Colors.BOLD}COMPRESSION SUGGESTIONS{Colors.END}")
+        print(Colors.DIM + "─" * min(_term_width(), 72) + Colors.END)
+
         # Check for repetitive phrases
         words = text.lower().split()
         word_freq = Counter(words)
         common_words = [w for w, c in word_freq.most_common(10) if c > 3 and len(w) > 3]
-        
+
         if common_words:
-            suggestions.append(f"{Colors.YELLOW}📝 Repetitive words:{Colors.END} {', '.join(common_words[:5])}")
+            suggestions.append(f"{Colors.YELLOW}Repetitive words:{Colors.END} {', '.join(common_words[:5])}")
             suggestions.append("   Consider using pronouns or abbreviations")
-        
-        # Check for verbose patterns
-        verbose_patterns = [
-            (r'\bin order to\b', 'to'),
-            (r'\bdue to the fact that\b', 'because'),
-            (r'\bat this point in time\b', 'now'),
-            (r'\bfor the purpose of\b', 'to'),
-            (r'\bin the event that\b', 'if'),
-        ]
-        
+
         found_verbose = []
-        for pattern, replacement in verbose_patterns:
+        for pattern, replacement in VERBOSE_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
-                found_verbose.append(f"'{pattern}' → '{replacement}'")
-        
+                phrase = pattern.replace(r"\b", "")
+                found_verbose.append(f"'{phrase}' → '{replacement}'")
+
         if found_verbose:
-            suggestions.append(f"{Colors.YELLOW}✂️  Verbose phrases found:{Colors.END}")
+            suggestions.append(f"{Colors.YELLOW}Verbose phrases found:{Colors.END}")
             for suggestion in found_verbose:
                 suggestions.append(f"   {suggestion}")
-        
-        # Check efficiency
+
         if stats.efficiency < 3.0:
-            suggestions.append(f"{Colors.RED}⚡ Low efficiency ({stats.efficiency:.1f} c/t):{Colors.END}")
+            suggestions.append(f"{Colors.RED}Low efficiency ({stats.efficiency:.1f} chars/token):{Colors.END}")
             suggestions.append("   Consider removing filler words, combining sentences")
-        
-        # Check for long lines
-        long_lines = [(i+1, line) for i, (line, tokens) in enumerate(stats.line_stats) if tokens > 40]
+
+        long_lines = [(i + 1, line) for i, (line, tokens) in enumerate(stats.line_stats) if tokens > 40]
         if long_lines:
-            suggestions.append(f"{Colors.YELLOW}📏 Long lines detected:{Colors.END}")
+            suggestions.append(f"{Colors.YELLOW}Long lines detected:{Colors.END}")
             for line_num, line in long_lines[:3]:
                 suggestions.append(f"   Line {line_num}: Consider breaking into smaller parts")
-        
-        # Whitespace optimization
+
         if text.count('  ') > 5 or text.count('\n\n\n') > 0:
-            suggestions.append(f"{Colors.GREEN}🧹 Whitespace optimization:{Colors.END}")
+            suggestions.append(f"{Colors.GREEN}Whitespace:{Colors.END}")
             suggestions.append("   Remove extra spaces and line breaks")
-        
+
         if suggestions:
             for suggestion in suggestions:
-                print(suggestion)
+                print("  " + suggestion)
         else:
-            print(f"{Colors.GREEN}✅ Text appears well-optimized!{Colors.END}")
-        
-        # Show potential savings
-        original_tokens = stats.token_count
-        estimated_savings = max(0, int(original_tokens * 0.1))  # Conservative 10%
-        
-        if estimated_savings > 0:
-            savings_cost = estimated_savings * 0.00003
-            print(f"\n{Colors.CYAN}💰 POTENTIAL SAVINGS:{Colors.END}")
-            print(f"  Estimated reduction: {estimated_savings} tokens (10%)")
-            print(f"  Cost savings: ${savings_cost:.4f} per request")
+            print(f"  {Colors.GREEN}No obvious cuts found. The text looks tight.{Colors.END}")
+
+        # Measure what the mechanical fixes actually save, with the same tokenizer.
+        compressed = self.compress(text)
+        after = self.tokenize(compressed).token_count
+        saved = stats.token_count - after
+        if saved > 0:
+            pct = 100.0 * saved / stats.token_count
+            print(f"\n{Colors.CYAN}{Colors.BOLD}MEASURED SAVINGS{Colors.END}")
+            print(f"  Applying the phrase and whitespace fixes: {Colors.BOLD}{stats.token_count} → "
+                  f"{after} tokens{Colors.END} ({Colors.GREEN}-{saved}, {pct:.0f}%{Colors.END})")
+            print(f"  {Colors.DIM}Re-tokenized with the same tokenizer; "
+                  f"${saved * 0.00003:.4f} less per request at $0.03 per 1K.{Colors.END}")
+
+
+VERBOSE_PATTERNS = [
+    (r'\bin order to\b', 'to'),
+    (r'\bdue to the fact that\b', 'because'),
+    (r'\bat this point in time\b', 'now'),
+    (r'\bfor the purpose of\b', 'to'),
+    (r'\bin the event that\b', 'if'),
+]
+
+
+def _match_case(original: str, replacement: str) -> str:
+    """Keep a capital first letter when the phrase started a sentence."""
+    if original[:1].isupper():
+        return replacement[:1].upper() + replacement[1:]
+    return replacement
+
+
+def _term_width() -> int:
+    import shutil
+    return shutil.get_terminal_size((100, 24)).columns
 
 
 def _prepare_console() -> None:
@@ -318,14 +387,25 @@ def build_parser() -> argparse.ArgumentParser:
         prog="token-visualizer",
         description="Show how an LLM tokenizer splits your prompt, which lines cost the most "
                     "tokens, and which wordy phrases you can cut.",
-        epilog="With no file, paste text and finish with Ctrl+D (Ctrl+Z then Enter on Windows), "
-               "or pipe it in: cat prompt.txt | token-visualizer -m gpt-4",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""examples:
+  token-visualizer prompt.txt                 analyze a file with the GPT-4 tokenizer
+  token-visualizer prompt.txt -m gpt-4o       use GPT-4o's tokenizer (o200k_base)
+  cat prompt.txt | token-visualizer           pipe text in (never asks questions)
+  token-visualizer                            paste text, end with Ctrl+D
+                                              (Ctrl+Z then Enter on Windows),
+                                              then pick a tokenizer from a menu
+  token-visualizer notes.txt -m bert-base-uncased  a Hugging Face model ID
+                                              (needs: pip install transformers)
+
+Colors turn off when output is not a terminal, with --no-color, or when
+NO_COLOR is set. FORCE_COLOR=1 keeps them on in a pipe.""",
     )
     parser.add_argument("file", nargs="?", help="text file to analyze (default: read stdin)")
     parser.add_argument("-m", "--model",
                         help=f"tokenizer to use: {', '.join(MODEL_OPTIONS)}, any tiktoken model "
-                             "name, or a Hugging Face model ID. Asked interactively if omitted "
-                             "in a terminal, otherwise gpt-4.")
+                             "name, or a Hugging Face model ID. Default gpt-4; only pasted text "
+                             "gets a menu.")
     parser.add_argument("--no-color", action="store_true", help="disable ANSI colors")
     parser.add_argument("--version", action="version", version=f"token-visualizer {__version__}")
     return parser
@@ -335,8 +415,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     """Interactive token visualizer"""
     _prepare_console()
     args = build_parser().parse_args(argv)
-    if args.no_color or not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
+    forced = bool(os.environ.get("FORCE_COLOR"))
+    if args.no_color or os.environ.get("NO_COLOR") or not (sys.stdout.isatty() or forced):
         Colors.disable()
+    else:
+        Colors.enable()
     interactive = sys.stdin is not None and sys.stdin.isatty()
     pause = interactive and _launched_by_double_click()
 
@@ -347,14 +430,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                 with open(args.file, 'r', encoding='utf-8') as f:
                     text = f.read()
             except FileNotFoundError:
-                print(f"❌ File not found: {args.file}")
+                print(f"error: File not found: {args.file}\nCheck the path, or pipe text in: cat prompt.txt | token-visualizer")
                 return 1
         elif not interactive:
             text = sys.stdin.read() if sys.stdin is not None else ""
         else:
             # Interactive mode
             eof = "Ctrl+Z then Enter" if os.name == "nt" else "Ctrl+D"
-            print(f"{Colors.BOLD}🔍 Token Visualizer{Colors.END}")
+            print(f"{Colors.BOLD}Token Visualizer{Colors.END}")
             print(f"Enter your text (press {eof} on a new line when done):")
             print("-" * 50)
 
@@ -368,20 +451,24 @@ def main(argv: Optional[List[str]] = None) -> int:
             text = '\n'.join(lines)
 
         if not text.strip():
-            print("❌ No text provided")
+            print("error: No text provided. Try: token-visualizer prompt.txt   (or --help)")
             return 1
 
         # Choose model
         model_name = args.model
-        if not model_name and interactive:
+        # Only pasted text gets the menu; files and pipes use gpt-4 unless -m says otherwise.
+        if not model_name and interactive and not args.file:
             print(f"\n{Colors.CYAN}Select tokenizer:{Colors.END}")
             for i, model in enumerate(MODEL_OPTIONS, 1):
                 print(f"  {i}. {model}")
             try:
-                choice = input(f"Choice (1-{len(MODEL_OPTIONS)}, default=1): ").strip()
+                choice = input(f"Choice (1-{len(MODEL_OPTIONS)} or a model name, default=1): ").strip()
                 if not choice:
                     choice = "1"
-                model_name = MODEL_OPTIONS[int(choice) - 1]
+                if choice.isdigit():
+                    model_name = MODEL_OPTIONS[int(choice) - 1]
+                else:  # a typed model name, e.g. gpt-4o or a Hugging Face ID
+                    model_name = choice
             except (ValueError, IndexError, EOFError):
                 model_name = "gpt-4"
         model_name = model_name or "gpt-4"

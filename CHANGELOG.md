@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0] - 2026-09-25
+
+- Token boundaries are shown as colored chips, one background color per token, instead of an indexed grid (the grid is still used when colors are off).
+- The flat "10% savings" guess is gone. The tool now applies its own phrase swaps and whitespace fixes, tokenizes the result again and reports the measured difference (`70 → 61 tokens`).
+- A file argument no longer stops to ask for a tokenizer; only pasted text gets the menu, which now also accepts a typed model name.
+- The report header names the tokenizer really used (for example `tiktoken o200k_base`, or a whitespace-split fallback).
+- `FORCE_COLOR` keeps colors on in a pipe; warnings go to stderr and say how to fix the problem; `--help` has examples; emoji removed from the output.
+- Install with Homebrew, Scoop, or the new one-line `install.sh` / `install.ps1` scripts (they verify SHA-256).
+- An example prompt in `examples/`, and a README that says which of Token-Visualizer and tokenviz to use for what.
+
 ## [0.2.0] - 2026-09-25
 
 - Prebuilt single-file executables (`token-visualizer`) for Windows, macOS (Apple Silicon and Intel) and Linux on every GitHub Release. The GPT tokenizers are built in, so they work offline. Double-click it on Windows to paste a prompt; the window waits for Enter before closing.
