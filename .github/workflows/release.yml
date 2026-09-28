@@ -92,6 +92,8 @@ jobs:
           mkdir "$name"
           cp "dist/$BIN" README.md LICENSE "$name/"
           tar czf "$name.tar.gz" "$name"
+          # Versionless copy so releases/latest/download/<file> links never go stale.
+          cp "$name.tar.gz" "$BIN-${{ matrix.target }}.tar.gz"
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
@@ -101,6 +103,10 @@ jobs:
           New-Item -ItemType Directory $name | Out-Null
           Copy-Item "dist/$env:BIN.exe", README.md, LICENSE $name
           Compress-Archive -Path $name -DestinationPath "$name.zip"
+          # Versionless copies so releases/latest/download/<file> links never go
+          # stale: the bare .exe (download and double-click) and the zip.
+          Copy-Item "dist/$env:BIN.exe" "$env:BIN-${{ matrix.target }}.exe"
+          Copy-Item "$name.zip" "$env:BIN-${{ matrix.target }}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -108,6 +114,7 @@ jobs:
           path: |
             ${{ env.BIN }}-*.tar.gz
             ${{ env.BIN }}-*.zip
+            ${{ env.BIN }}-*.exe
 
   release:
     name: Publish GitHub Release
@@ -140,7 +147,7 @@ jobs:
             echo
             echo "### Downloads"
             echo
-            echo "- Windows: \`$BIN-$TAG-windows-x86_64.zip\`"
+            echo "- Windows: \`$BIN-windows-x86_64.exe\` (just the program) or \`$BIN-$TAG-windows-x86_64.zip\`"
             echo "- macOS Apple Silicon: \`$BIN-$TAG-macos-arm64.tar.gz\`"
             echo "- macOS Intel: \`$BIN-$TAG-macos-x86_64.tar.gz\`"
             echo "- Linux: \`$BIN-$TAG-linux-x86_64.tar.gz\`"

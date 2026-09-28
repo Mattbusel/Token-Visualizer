@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1] - 2026-09-28
+
+- Releases also carry versionless files, including the bare `token-visualizer-windows-x86_64.exe`, so `releases/latest/download/...` links always point at the newest build. The versioned archives the install scripts and winget use are unchanged.
+- README shortened to one screen: a direct Windows download, an animated how-it-works diagram from a real run, three real examples and three steps. Options, install details, Python use, the tokenviz comparison and limitations moved to `docs/REFERENCE.md`.
+- A project site at https://mattbusel.github.io/Token-Visualizer/ (in `docs/`).
+
 ## [0.3.0] - 2026-09-25
 
 - Token boundaries are shown as colored chips, one background color per token, instead of an indexed grid (the grid is still used when colors are off).

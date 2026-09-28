@@ -13,7 +13,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 MODEL_OPTIONS = ["gpt-4", "gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet", "llama-2-7b"]
 
