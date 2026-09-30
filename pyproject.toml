@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "token-visualizer"
-version = "0.3.1"
+version = "0.3.2"
 description = "See how an LLM tokenizer splits your prompt, which lines cost the most, and what to cut"
 readme = "README.md"
 requires-python = ">=3.8"

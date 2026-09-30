@@ -13,7 +13,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 MODEL_OPTIONS = ["gpt-4", "gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet", "llama-2-7b"]
 
@@ -54,7 +54,7 @@ class Colors:
     MAGENTA = '\033[95m'
     CYAN = '\033[96m'
     WHITE = '\033[97m'
-    BOLD = '\033[1m'
+    BOLD = '\0.3.2m'
     UNDERLINE = '\033[4m'
     DIM = '\033[2m'
     END = '\033[0m'

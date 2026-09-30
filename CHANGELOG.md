@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.2] - 2026-09-30
+
+- Linux x86_64 release builds from GitLab CI (single file, tokenizer data bundled, runs offline). Downloads: https://gitlab.com/mattbusel/Token-Visualizer/-/releases
+
 ## [0.3.1] - 2026-09-28
 
 - Releases also carry versionless files, including the bare `token-visualizer-windows-x86_64.exe`, so `releases/latest/download/...` links always point at the newest build. The versioned archives the install scripts and winget use are unchanged.
