@@ -54,7 +54,7 @@ class Colors:
     MAGENTA = '\033[95m'
     CYAN = '\033[96m'
     WHITE = '\033[97m'
-    BOLD = '\0.3.2m'
+    BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     DIM = '\033[2m'
     END = '\033[0m'
