@@ -23,6 +23,8 @@ mkdir -p ~/.local/bin && curl -fsSL https://gitlab.com/mattbusel/Token-Visualize
 
 The downloads are single files with the tokenizer data built in, so they work offline. Every release, with SHA-256 checksums: [Releases](https://gitlab.com/mattbusel/Token-Visualizer/-/releases).
 
+**In GitLab CI:** report the wordy phrases in every prompt file, with the measured token saving, on each pipeline with the [`prompt-diet`](https://gitlab.com/explore/catalog/mattbusel/llm-ci) CI/CD component.
+
 ## How it works
 
 <img src="assets/how-it-works.svg" width="100%" alt="Animated diagram from a real run on examples/support-prompt.txt with the GPT-4o tokenizer. Step 1: line 2 is cut into 16 numbered tokens, like In, order, to, help. Step 2: line counts 12, 16, 17, 18 and 7, total 70 tokens, 357 characters, estimated $0.0021. Step 3: 'In order to' becomes 'To', 'Due to the fact that' becomes 'Because', 'In the event that' becomes 'If', and re-tokenizing takes the prompt from 70 to 61 tokens, 13 percent shorter.">
