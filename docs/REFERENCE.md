@@ -5,7 +5,9 @@
 ## All options
 
 ```text
-usage: token-visualizer [-h] [-m MODEL] [--no-color] [--version] [file]
+usage: token-visualizer [-h] [-m MODEL] [-t N] [--threshold N] [-b N] [--json]
+                        [--no-color] [--version]
+                        [file]
 
 positional arguments:
   file                  text file to analyze (default: read stdin)
@@ -17,9 +19,17 @@ options:
                         claude-3-sonnet, llama-2-7b, any tiktoken model name,
                         or a Hugging Face model ID. Default gpt-4; only pasted
                         text gets a menu.
+  -t N, --top N         rank lines heaviest first and show only the top N
+  --threshold N         rank lines heaviest first and show only those over N
+                        tokens
+  -b N, --budget N      exit with code 3 if the whole input is over N tokens
+                        (for CI and scripts)
+  --json                print machine-readable JSON instead of the report
   --no-color            disable ANSI colors
   --version             show program's version number and exit
 ```
+
+Exit codes: 0 ok, 1 no input or unreadable file, 2 bad option, 3 over `--budget`. With `--json`, stdout carries only the JSON (model, encoding, total_tokens, lines, budget, over_budget, and the suggestions with measured savings); messages go to stderr.
 
 Colors turn off when output is not a terminal, with `--no-color`, or when `NO_COLOR` is set; `FORCE_COLOR=1` keeps them on in a pipe. The tokenizer menu only appears for pasted text; a file argument or a pipe uses `gpt-4` unless `-m` says otherwise, so scripts never hang.
 
@@ -77,16 +87,15 @@ viz.suggest_compression("Your prompt here")
 
 ## Token-Visualizer or tokenviz?
 
-This repo has a sibling, [tokenviz](https://gitlab.com/mattbusel/tokenviz). Both count tokens with OpenAI's `tiktoken`; they answer different questions.
+Token-Visualizer now does everything its sibling [tokenviz](https://gitlab.com/mattbusel/tokenviz) did, so use this one. tokenviz keeps working for existing scripts and CI jobs.
 
-| You want to... | Use |
+| tokenviz | Token-Visualizer |
 | --- | --- |
-| See the exact token boundaries, one colored chip per token | **Token-Visualizer** (this one) |
-| Get suggestions for wordy phrases, plus the token savings measured by re-tokenizing | **Token-Visualizer** |
-| Count with a Hugging Face tokenizer (Llama, BERT, ...) | **Token-Visualizer** (from source, with `transformers`) |
-| Paste a prompt into a window without touching a terminal (Windows double-click) | **Token-Visualizer** |
-| Rank a long prompt's lines by cost with `--top` / `--threshold` | [tokenviz](https://gitlab.com/mattbusel/tokenviz) |
-| Fail a CI job when a prompt goes over a token budget, or get JSON | [tokenviz](https://gitlab.com/mattbusel/tokenviz) (`--budget`, `--json`) |
+| `tokenviz -f prompt.txt --top 5` | `token-visualizer prompt.txt --top 5` |
+| `tokenviz -f prompt.txt --threshold 20` | `token-visualizer prompt.txt --threshold 20` |
+| `tokenviz -f prompt.txt --budget 2000` | `token-visualizer prompt.txt --budget 2000` (same exit code 3) |
+| `tokenviz -f prompt.txt --json` | `token-visualizer prompt.txt --json` |
+| `tokenviz "some text"` | `echo "some text" \| token-visualizer` |
 
 ## Limitations
 

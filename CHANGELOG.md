@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.0] - 2026-09-30
+
+- Absorbs tokenviz's CI features, so one tool does both jobs. tokenviz keeps working, and its README points here.
+- `--budget N` (`-b`): exits with code 3 when the input is over N tokens and prints `Over budget: 70 tokens > 60 (exit code 3)`, or `Within budget: ...` when it fits.
+- `--json`: machine-readable output with model, encoding, total_tokens, lines (heaviest first), budget, over_budget, and the suggestions, each wordy phrase with the tokens it saves measured on its own, plus the measured total savings. stdout carries only the JSON; messages go to stderr.
+- `--top N` (`-t`) and `--threshold N`: rank the lines heaviest first and keep the top N, or those over N tokens.
+- Exit codes match tokenviz: 0 ok, 1 no input or unreadable file, 2 bad option, 3 over budget. A file that is not UTF-8 or cannot be opened now exits 1 with a message instead of a traceback.
+- Without the new flags the output is unchanged.
+
 ## [0.3.2] - 2026-09-30
 
 - Linux x86_64 release builds from GitLab CI (single file, tokenizer data bundled, runs offline). Downloads: https://gitlab.com/mattbusel/Token-Visualizer/-/releases

@@ -6,6 +6,8 @@ For anyone who writes prompts and pays per token: developers, prompt engineers, 
 
 <p align="center"><a href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe"><b>Download for Windows (.exe)</b></a> &nbsp;&middot;&nbsp; <a href="#install">Linux and macOS</a> &nbsp;&middot;&nbsp; <a href="https://token-visualizer-app.vercel.app/">Project site</a> &nbsp;&middot;&nbsp; <a href="docs/REFERENCE.md">Docs</a></p>
 
+No install: try it in the browser at https://gpt-token-counter.vercel.app
+
 <p align="center"><img src="assets/demo.gif" alt="A real terminal session: token-visualizer analyzes a 5-line support prompt with the GPT-4o tokenizer, shows each token as a colored chip, and measures 70 to 61 tokens after the suggested cuts." width="900"></p>
 
 ## Install
@@ -76,6 +78,37 @@ TOKEN BREAKDOWN:
 
 Most tokens carry the space in front of the word, which is why ` order` and `order` are different tokens.
 
+## Use in CI
+
+Fail a job when a prompt grows past a token budget, or get JSON for a script. Exit codes: 0 ok, 1 no input or unreadable file, 2 bad option, 3 over budget.
+
+```console
+$ token-visualizer examples/support-prompt.txt -m gpt-4o --budget 60
+  ...
+Over budget: 70 tokens > 60 (exit code 3)
+$ echo $?
+3
+$ token-visualizer examples/support-prompt.txt -m gpt-4o --json --top 1
+{
+  "model": "gpt-4o",
+  "encoding": "o200k_base",
+  "total_tokens": 70,
+  ...
+  "lines": [
+    {
+      "line": 4,
+      "tokens": 18,
+      "text": "In the event that the customer is upset, stay calm and apologize once, not repeatedly."
+    }
+  ],
+  ...
+}
+```
+
+`--top N` and `--threshold N` rank the lines heaviest first and keep the top N, or those over N tokens. The JSON also lists each wordy phrase with the tokens it saves, measured.
+
+**Replaces tokenviz.** Everything [tokenviz](https://gitlab.com/mattbusel/tokenviz) did (`--budget`, `--json`, `--top`, `--threshold`) is now here, so use this one. tokenviz keeps working.
+
 ## Use it in 3 steps
 
 1. **Get it:** use the Linux one-liner or the Windows .exe above, or `pipx`.
@@ -89,7 +122,7 @@ Most tokens carry the space in front of the word, which is why ` order` and `ord
 | Doc | What is in it |
 | --- | --- |
 | [Reference](docs/REFERENCE.md) | All options, what it checks, install details, Hugging Face tokenizers, use from Python, limitations |
-| [Token-Visualizer or tokenviz?](docs/REFERENCE.md#token-visualizer-or-tokenviz) | Which of the two sibling tools to use for what |
+| [Token-Visualizer or tokenviz?](docs/REFERENCE.md#token-visualizer-or-tokenviz) | Why tokenviz is replaced, and its equivalent commands |
 | [Changelog](CHANGELOG.md) | What changed in each release |
 
 Anthropic publishes no Claude tokenizer, so `-m claude-3-sonnet` falls back to whitespace splitting and the header says so. For Llama and other open models, pass a Hugging Face model ID (from source, with `transformers`). [Details](docs/REFERENCE.md#limitations).

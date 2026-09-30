@@ -6,6 +6,7 @@ Supports multiple tokenizers and provides compression suggestions
 
 import argparse
 import importlib.util
+import json
 import os
 import re
 import sys
@@ -13,7 +14,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional
 
-__version__ = "0.3.2"
+__version__ = "0.4.0"
 
 MODEL_OPTIONS = ["gpt-4", "gpt-4o", "gpt-3.5-turbo", "claude-3-sonnet", "llama-2-7b"]
 
@@ -152,9 +153,86 @@ class TokenVisualizer:
             line_stats=line_stats
         )
     
-    def visualize_tokens(self, text: str, show_individual: bool = True) -> None:
-        """Display comprehensive token analysis"""
+    def ranked_lines(self, text: str, top: Optional[int] = None,
+                     threshold: Optional[int] = None,
+                     stats: Optional[TokenStats] = None) -> List[Tuple[int, str, int]]:
+        """Non-blank lines as (line_number, text, tokens), heaviest first.
+
+        ``threshold`` keeps lines with more than N tokens; ``top`` keeps the first N.
+        """
+        stats = stats or self.tokenize(text)
+        lines = [(i, line, n) for i, (line, n) in enumerate(stats.line_stats, 1) if line.strip()]
+        if threshold is not None:
+            lines = [entry for entry in lines if entry[2] > threshold]
+        lines.sort(key=lambda entry: entry[2], reverse=True)
+        return lines[:top] if top else lines
+
+    def encoding_name(self) -> str:
+        """The tokenizer's name: a tiktoken encoding, a Hugging Face ID, or 'whitespace'."""
+        if self.tokenizer is None:
+            return "whitespace"
+        if TIKTOKEN_AVAILABLE and isinstance(self.tokenizer, tiktoken.Encoding):
+            return self.tokenizer.name
+        return getattr(self.tokenizer, "name_or_path", "") or type(self.tokenizer).__name__
+
+    def suggestions(self, text: str, stats: Optional[TokenStats] = None) -> Dict:
+        """The compression suggestions as data, each phrase swap measured on its own."""
+        stats = stats or self.tokenize(text)
+        before = stats.token_count
+        phrases = []
+        for pattern, replacement in VERBOSE_PATTERNS:
+            count = len(re.findall(pattern, text, re.IGNORECASE))
+            if count:
+                swapped = re.sub(pattern, lambda m, r=replacement: _match_case(m.group(0), r),
+                                 text, flags=re.IGNORECASE)
+                phrases.append({
+                    "phrase": pattern.replace(r"\b", ""),
+                    "replacement": replacement,
+                    "count": count,
+                    "tokens_saved": before - self.tokenize(swapped).token_count,
+                })
+        words = Counter(text.lower().split())
+        after = self.tokenize(self.compress(text)).token_count
+        return {
+            "phrases": phrases,
+            "repeated_words": [w for w, c in words.most_common(10) if c > 3 and len(w) > 3][:5],
+            "long_lines": [i for i, (_, n) in enumerate(stats.line_stats, 1) if n > 40],
+            "low_efficiency": stats.efficiency < 3.0,
+            "extra_whitespace": text.count('  ') > 5 or text.count('\n\n\n') > 0,
+            "savings": {
+                "tokens_before": before,
+                "tokens_after": after,
+                "tokens_saved": before - after,
+                "percent": round(100.0 * (before - after) / before, 1) if before else 0.0,
+            },
+        }
+
+    def report(self, text: str, top: Optional[int] = None, threshold: Optional[int] = None,
+               budget: Optional[int] = None) -> Dict:
+        """Everything --json prints."""
         stats = self.tokenize(text)
+        return {
+            "model": self.model_name,
+            "encoding": self.encoding_name(),
+            "total_tokens": stats.token_count,
+            "total_characters": stats.char_count,
+            "lines_total": sum(1 for line, _ in stats.line_stats if line.strip()),
+            "budget": budget,
+            "over_budget": budget is not None and stats.token_count > budget,
+            "lines": [{"line": i, "tokens": n, "text": line}
+                      for i, line, n in self.ranked_lines(text, top, threshold, stats)],
+            "suggestions": self.suggestions(text, stats),
+        }
+
+    def visualize_tokens(self, text: str, show_individual: bool = True,
+                         top: Optional[int] = None, threshold: Optional[int] = None) -> None:
+        """Display comprehensive token analysis.
+
+        With ``top`` or ``threshold`` the line breakdown is ranked heaviest first and
+        filtered; without them it lists every line in order.
+        """
+        stats = self.tokenize(text)
+        ranked = top is not None or threshold is not None
         width = _term_width()
 
         print(f"\n{Colors.BOLD}TOKEN ANALYSIS - {self.model_name.upper()}{Colors.END}"
@@ -169,11 +247,26 @@ class TokenVisualizer:
               f" {Colors.DIM}(at the old $0.03 per 1K input tokens){Colors.END}")
 
         # Line-by-line analysis
-        print(f"\n{Colors.CYAN}{Colors.BOLD}LINE BREAKDOWN{Colors.END}"
-              f"  {Colors.DIM}green < 25 tokens, yellow 25 to 50, red > 50{Colors.END}")
+        if ranked:
+            rows = self.ranked_lines(text, top, threshold, stats)
+            which = []
+            if threshold is not None:
+                which.append(f"over {threshold} tokens")
+            if top is not None:
+                which.append(f"top {top}")
+            print(f"\n{Colors.CYAN}{Colors.BOLD}HEAVIEST LINES{Colors.END}"
+                  f"  {Colors.DIM}{', '.join(which)}; {len(rows)} of "
+                  f"{sum(1 for line, _ in stats.line_stats if line.strip())} lines, "
+                  f"heaviest first{Colors.END}")
+            if not rows:
+                print(f"  {Colors.YELLOW}No lines match.{Colors.END}")
+        else:
+            rows = [(i, line, n) for i, (line, n) in enumerate(stats.line_stats, 1)]
+            print(f"\n{Colors.CYAN}{Colors.BOLD}LINE BREAKDOWN{Colors.END}"
+                  f"  {Colors.DIM}green < 25 tokens, yellow 25 to 50, red > 50{Colors.END}")
         expensive_lines = []
         preview_width = max(20, width - 36)
-        for i, (line, token_count) in enumerate(stats.line_stats, 1):
+        for i, line, token_count in rows:
             if token_count == 0:
                 continue
             if token_count > 50:
@@ -188,7 +281,7 @@ class TokenVisualizer:
             print(f"  {color}Line {i:2d}: {token_count:3d} tokens{Colors.END} "
                   f"{Colors.DIM}({efficiency:.1f} c/t){Colors.END} {preview}")
 
-        if expensive_lines:
+        if expensive_lines and not ranked:
             print(f"\n{Colors.RED}{Colors.BOLD}EXPENSIVE LINES (>50 tokens){Colors.END}")
             for line_num, preview, tokens in expensive_lines:
                 print(f"  Line {line_num}: {tokens} tokens - {preview}")
@@ -382,6 +475,19 @@ def _launched_by_double_click() -> bool:
     return count <= (2 if getattr(sys, "frozen", False) else 1)
 
 
+def _int_at_least(low: int):
+    """argparse type: an integer >= low (a bad value exits with code 2)."""
+    def parse(value: str) -> int:
+        try:
+            number = int(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"{value!r} is not a whole number")
+        if number < low:
+            raise argparse.ArgumentTypeError(f"{number} is below the minimum of {low}")
+        return number
+    return parse
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="token-visualizer",
@@ -397,6 +503,13 @@ def build_parser() -> argparse.ArgumentParser:
                                               then pick a tokenizer from a menu
   token-visualizer notes.txt -m bert-base-uncased  a Hugging Face model ID
                                               (needs: pip install transformers)
+  token-visualizer prompt.txt --top 5         the 5 heaviest lines, ranked
+  token-visualizer prompt.txt --threshold 20  only lines over 20 tokens
+  token-visualizer prompt.txt --budget 2000   exit 3 if over 2000 tokens (CI)
+  token-visualizer prompt.txt --json          JSON for scripts
+
+exit codes: 0 ok, 1 no input or unreadable file, 2 bad option,
+3 over --budget.
 
 Colors turn off when output is not a terminal, with --no-color, or when
 NO_COLOR is set. FORCE_COLOR=1 keeps them on in a pipe.""",
@@ -406,6 +519,14 @@ NO_COLOR is set. FORCE_COLOR=1 keeps them on in a pipe.""",
                         help=f"tokenizer to use: {', '.join(MODEL_OPTIONS)}, any tiktoken model "
                              "name, or a Hugging Face model ID. Default gpt-4; only pasted text "
                              "gets a menu.")
+    parser.add_argument("-t", "--top", type=_int_at_least(1), metavar="N",
+                        help="rank lines heaviest first and show only the top N")
+    parser.add_argument("--threshold", type=_int_at_least(0), metavar="N",
+                        help="rank lines heaviest first and show only those over N tokens")
+    parser.add_argument("-b", "--budget", type=_int_at_least(1), metavar="N",
+                        help="exit with code 3 if the whole input is over N tokens (for CI and scripts)")
+    parser.add_argument("--json", action="store_true",
+                        help="print machine-readable JSON instead of the report")
     parser.add_argument("--no-color", action="store_true", help="disable ANSI colors")
     parser.add_argument("--version", action="version", version=f"token-visualizer {__version__}")
     return parser
@@ -416,12 +537,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     _prepare_console()
     args = build_parser().parse_args(argv)
     forced = bool(os.environ.get("FORCE_COLOR"))
-    if args.no_color or os.environ.get("NO_COLOR") or not (sys.stdout.isatty() or forced):
+    if (args.json or args.no_color or os.environ.get("NO_COLOR")
+            or not (sys.stdout.isatty() or forced)):
         Colors.disable()
     else:
         Colors.enable()
     interactive = sys.stdin is not None and sys.stdin.isatty()
-    pause = interactive and _launched_by_double_click()
+    pause = interactive and not args.json and _launched_by_double_click()
+    # With --json, stdout carries only the JSON; messages go to stderr.
+    note = sys.stderr if args.json else sys.stdout
 
     try:
         if args.file:
@@ -430,16 +554,20 @@ def main(argv: Optional[List[str]] = None) -> int:
                 with open(args.file, 'r', encoding='utf-8') as f:
                     text = f.read()
             except FileNotFoundError:
-                print(f"error: File not found: {args.file}\nCheck the path, or pipe text in: cat prompt.txt | token-visualizer")
+                print(f"error: File not found: {args.file}\nCheck the path, or pipe text in: cat prompt.txt | token-visualizer",
+                      file=note)
+                return 1
+            except (OSError, UnicodeDecodeError) as exc:
+                print(f"error: Could not read {args.file}: {exc}", file=note)
                 return 1
         elif not interactive:
             text = sys.stdin.read() if sys.stdin is not None else ""
         else:
             # Interactive mode
             eof = "Ctrl+Z then Enter" if os.name == "nt" else "Ctrl+D"
-            print(f"{Colors.BOLD}Token Visualizer{Colors.END}")
-            print(f"Enter your text (press {eof} on a new line when done):")
-            print("-" * 50)
+            print(f"{Colors.BOLD}Token Visualizer{Colors.END}", file=note)
+            print(f"Enter your text (press {eof} on a new line when done):", file=note)
+            print("-" * 50, file=note)
 
             lines = []
             try:
@@ -451,13 +579,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             text = '\n'.join(lines)
 
         if not text.strip():
-            print("error: No text provided. Try: token-visualizer prompt.txt   (or --help)")
+            print("error: No text provided. Try: token-visualizer prompt.txt   (or --help)", file=note)
             return 1
 
         # Choose model
         model_name = args.model
         # Only pasted text gets the menu; files and pipes use gpt-4 unless -m says otherwise.
-        if not model_name and interactive and not args.file:
+        if not model_name and interactive and not args.file and not args.json:
             print(f"\n{Colors.CYAN}Select tokenizer:{Colors.END}")
             for i, model in enumerate(MODEL_OPTIONS, 1):
                 print(f"  {i}. {model}")
@@ -475,8 +603,20 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         # Analyze
         visualizer = TokenVisualizer(model_name)
-        visualizer.visualize_tokens(text)
+        if args.json:
+            report = visualizer.report(text, args.top, args.threshold, args.budget)
+            print(json.dumps(report, indent=2, ensure_ascii=False))
+            return 3 if report["over_budget"] else 0
+        visualizer.visualize_tokens(text, top=args.top, threshold=args.threshold)
         visualizer.suggest_compression(text)
+        if args.budget is not None:
+            total = visualizer.tokenize(text).token_count
+            if total > args.budget:
+                print(f"\n{Colors.RED}{Colors.BOLD}Over budget: {total} tokens > {args.budget} "
+                      f"(exit code 3){Colors.END}")
+                return 3
+            print(f"\n{Colors.GREEN}{Colors.BOLD}Within budget: {total} of {args.budget} "
+                  f"tokens{Colors.END}")
         return 0
     finally:
         if pause:
