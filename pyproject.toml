@@ -20,8 +20,8 @@ dev = ["pytest>=7"]
 token-visualizer = "token_visualizer:main"
 
 [project.urls]
-Homepage = "https://mattbusel.github.io/Token-Visualizer/"
-Source = "https://github.com/Mattbusel/Token-Visualizer"
+Homepage = "https://token-visualizer-app.vercel.app/"
+Source = "https://gitlab.com/mattbusel/Token-Visualizer"
 
 [tool.setuptools]
 py-modules = ["token_visualizer"]

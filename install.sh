@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install Token Visualizer from the latest GitHub release.
 #
-#   curl -fsSL https://raw.githubusercontent.com/Mattbusel/Token-Visualizer/main/install.sh | sh
+#   curl -fsSL https://gitlab.com/mattbusel/Token-Visualizer/-/raw/main/install.sh | sh
 #
 # Options (environment variables):
 #   INSTALL_DIR=/some/dir   where to put the binary (default: ~/.local/bin)

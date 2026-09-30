@@ -1,6 +1,6 @@
 # Token Visualizer reference
 
-[README](../README.md) · [Reference](REFERENCE.md) · [Project site](https://mattbusel.github.io/Token-Visualizer/)
+[README](../README.md) · [Reference](REFERENCE.md) · [Project site](https://token-visualizer-app.vercel.app/)
 
 ## All options
 
@@ -37,13 +37,13 @@ The measured savings are not a guess: the tool applies its own phrase swaps and 
 
 | Platform | Command |
 | --- | --- |
-| Windows (download) | [token-visualizer-windows-x86_64.exe](https://github.com/Mattbusel/Token-Visualizer/releases/latest/download/token-visualizer-windows-x86_64.exe) |
+| Windows (download) | [token-visualizer-windows-x86_64.exe](https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe) |
 | macOS / Linux (Homebrew) | `brew install mattbusel/tap/token-visualizer` |
-| Windows (Scoop) | `scoop bucket add mattbusel https://github.com/Mattbusel/scoop-bucket; scoop install mattbusel/token-visualizer` |
-| macOS / Linux (script) | `curl -fsSL https://raw.githubusercontent.com/Mattbusel/Token-Visualizer/main/install.sh \| sh` |
-| Windows (PowerShell script) | `irm https://raw.githubusercontent.com/Mattbusel/Token-Visualizer/main/install.ps1 \| iex` |
-| Any OS with Python 3.8+ | `pipx install git+https://github.com/Mattbusel/Token-Visualizer` |
-| Manual download | [Latest release](https://github.com/Mattbusel/Token-Visualizer/releases/latest): Windows .exe and zip, macOS (Apple Silicon or Intel) and Linux tarballs |
+| Windows (Scoop) | `scoop bucket add mattbusel https://gitlab.com/mattbusel/scoop-bucket; scoop install mattbusel/token-visualizer` |
+| macOS / Linux (script) | `curl -fsSL https://gitlab.com/mattbusel/Token-Visualizer/-/raw/main/install.sh \| sh` |
+| Windows (PowerShell script) | `irm https://gitlab.com/mattbusel/Token-Visualizer/-/raw/main/install.ps1 \| iex` |
+| Any OS with Python 3.8+ | `pipx install git+https://gitlab.com/mattbusel/Token-Visualizer` |
+| Manual download | [Latest release](https://gitlab.com/mattbusel/Token-Visualizer/-/releases): Windows .exe and zip, macOS (Apple Silicon or Intel) and Linux tarballs |
 
 The downloads are single files with the GPT tokenizers built in, so they work offline. The two scripts check the SHA-256 against the release's `SHA256SUMS.txt` before installing: `install.sh` puts `token-visualizer` in `~/.local/bin`, `install.ps1` puts `token-visualizer.exe` in `%LOCALAPPDATA%\Programs\token-visualizer` and adds it to your user PATH. Hugging Face tokenizers are not in the downloads; for those use pipx or source with `transformers` (below).
 
@@ -54,7 +54,7 @@ The downloads are single files with the GPT tokenizers built in, so they work of
 Python 3.8+. `tiktoken` is required for real GPT counts; `transformers` is optional.
 
 ```bash
-git clone https://github.com/Mattbusel/Token-Visualizer
+git clone https://gitlab.com/mattbusel/Token-Visualizer
 cd Token-Visualizer
 pip install -e ".[hf,dev]"      # or: pip install tiktoken
 pytest
@@ -77,7 +77,7 @@ viz.suggest_compression("Your prompt here")
 
 ## Token-Visualizer or tokenviz?
 
-This repo has a sibling, [tokenviz](https://github.com/Mattbusel/tokenviz). Both count tokens with OpenAI's `tiktoken`; they answer different questions.
+This repo has a sibling, [tokenviz](https://gitlab.com/mattbusel/tokenviz). Both count tokens with OpenAI's `tiktoken`; they answer different questions.
 
 | You want to... | Use |
 | --- | --- |
@@ -85,8 +85,8 @@ This repo has a sibling, [tokenviz](https://github.com/Mattbusel/tokenviz). Both
 | Get suggestions for wordy phrases, plus the token savings measured by re-tokenizing | **Token-Visualizer** |
 | Count with a Hugging Face tokenizer (Llama, BERT, ...) | **Token-Visualizer** (from source, with `transformers`) |
 | Paste a prompt into a window without touching a terminal (Windows double-click) | **Token-Visualizer** |
-| Rank a long prompt's lines by cost with `--top` / `--threshold` | [tokenviz](https://github.com/Mattbusel/tokenviz) |
-| Fail a CI job when a prompt goes over a token budget, or get JSON | [tokenviz](https://github.com/Mattbusel/tokenviz) (`--budget`, `--json`) |
+| Rank a long prompt's lines by cost with `--top` / `--threshold` | [tokenviz](https://gitlab.com/mattbusel/tokenviz) |
+| Fail a CI job when a prompt goes over a token budget, or get JSON | [tokenviz](https://gitlab.com/mattbusel/tokenviz) (`--budget`, `--json`) |
 
 ## Limitations
 

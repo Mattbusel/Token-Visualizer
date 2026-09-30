@@ -4,7 +4,7 @@
 
 For anyone who writes prompts and pays per token: developers, prompt engineers, and anyone curious why a sentence "costs" what it does. A free LLM token counter for the terminal, using OpenAI's real tokenizers (GPT-4, GPT-4o, GPT-3.5) offline.
 
-<p align="center"><a href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe"><b>Download for Windows (.exe)</b></a> &nbsp;&middot;&nbsp; <a href="#install">Linux and macOS</a> &nbsp;&middot;&nbsp; <a href="https://mattbusel.github.io/Token-Visualizer/">Project site</a> &nbsp;&middot;&nbsp; <a href="docs/REFERENCE.md">Docs</a></p>
+<p align="center"><a href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe"><b>Download for Windows (.exe)</b></a> &nbsp;&middot;&nbsp; <a href="#install">Linux and macOS</a> &nbsp;&middot;&nbsp; <a href="https://token-visualizer-app.vercel.app/">Project site</a> &nbsp;&middot;&nbsp; <a href="docs/REFERENCE.md">Docs</a></p>
 
 <p align="center"><img src="assets/demo.gif" alt="A real terminal session: token-visualizer analyzes a 5-line support prompt with the GPT-4o tokenizer, shows each token as a colored chip, and measures 70 to 61 tokens after the suggested cuts." width="900"></p>
 
