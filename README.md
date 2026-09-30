@@ -4,21 +4,24 @@
 
 For anyone who writes prompts and pays per token: developers, prompt engineers, and anyone curious why a sentence "costs" what it does. A free LLM token counter for the terminal, using OpenAI's real tokenizers (GPT-4, GPT-4o, GPT-3.5) offline.
 
-<p align="center"><a href="https://github.com/Mattbusel/Token-Visualizer/releases/latest/download/token-visualizer-windows-x86_64.exe"><b>Download for Windows (.exe)</b></a> &nbsp;&middot;&nbsp; <a href="#install">macOS and Linux</a> &nbsp;&middot;&nbsp; <a href="https://mattbusel.github.io/Token-Visualizer/">Project site</a> &nbsp;&middot;&nbsp; <a href="docs/REFERENCE.md">Docs</a></p>
+<p align="center"><a href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe"><b>Download for Windows (.exe)</b></a> &nbsp;&middot;&nbsp; <a href="#install">Linux and macOS</a> &nbsp;&middot;&nbsp; <a href="https://mattbusel.github.io/Token-Visualizer/">Project site</a> &nbsp;&middot;&nbsp; <a href="docs/REFERENCE.md">Docs</a></p>
 
 <p align="center"><img src="assets/demo.gif" alt="A real terminal session: token-visualizer analyzes a 5-line support prompt with the GPT-4o tokenizer, shows each token as a colored chip, and measures 70 to 61 tokens after the suggested cuts." width="900"></p>
 
 ## Install
 
-| Platform | How |
-| --- | --- |
-| **Windows** | [**Download token-visualizer-windows-x86_64.exe**](https://github.com/Mattbusel/Token-Visualizer/releases/latest/download/token-visualizer-windows-x86_64.exe), double-click it, paste your prompt. (Unsigned, so SmartScreen may ask: *More info*, then *Run anyway*.) |
-| **Windows** (Scoop) | `scoop bucket add mattbusel https://github.com/Mattbusel/scoop-bucket; scoop install mattbusel/token-visualizer` |
-| **macOS / Linux** (Homebrew) | `brew install mattbusel/tap/token-visualizer` |
-| **macOS / Linux** (script) | `curl -fsSL https://raw.githubusercontent.com/Mattbusel/Token-Visualizer/main/install.sh \| sh` |
-| **Any OS with Python 3.8+** | `pipx install git+https://github.com/Mattbusel/Token-Visualizer` |
+**Linux** (x86_64, Ubuntu 20.04+ / Debian 11+). One line, no dependencies, installs to `~/.local/bin`:
 
-The downloads have the GPT tokenizers built in and work offline. More options (PowerShell one-liner, tarballs, Hugging Face tokenizers): [docs/REFERENCE.md](docs/REFERENCE.md#install-details).
+```sh
+mkdir -p ~/.local/bin && curl -fsSL https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-linux-x86_64.tar.gz | tar xz --strip-components=1 -C ~/.local/bin --wildcards '*/token-visualizer'
+```
+
+| Other systems | |
+|---|---|
+| **Windows** | [Download token-visualizer-windows-x86_64.exe](https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe) and run it. (Unsigned, so SmartScreen may ask: *More info*, then *Run anyway*.) |
+| **macOS, or from source** | `pipx install git+https://gitlab.com/mattbusel/Token-Visualizer.git` (Python 3.8+) |
+
+The downloads are single files with the tokenizer data built in, so they work offline. Every release, with SHA-256 checksums: [Releases](https://gitlab.com/mattbusel/Token-Visualizer/-/releases).
 
 ## How it works
 
@@ -73,7 +76,7 @@ Most tokens carry the space in front of the word, which is why ` order` and `ord
 
 ## Use it in 3 steps
 
-1. **Get it:** download the .exe above, or `brew` / `scoop` / `pipx`.
+1. **Get it:** use the Linux one-liner or the Windows .exe above, or `pipx`.
 2. **Run it on your prompt:** `token-visualizer prompt.txt -m gpt-4o` (or double-click the .exe and paste, then Ctrl+Z and Enter).
 3. **Cut what it flags** and run it again to see the new count.
 
