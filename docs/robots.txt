@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://token-visualizer-app.vercel.app/sitemap.xml

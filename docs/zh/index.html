@@ -1,24 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Token Visualizer: free LLM token counter for prompts</title>
-<meta name="description" content="Free LLM token counter: see how GPT-4 and GPT-4o split your prompt into tokens, which lines cost most, and what to cut, with measured savings. Windows .exe.">
-<link rel="canonical" href="https://token-visualizer-app.vercel.app/">
+<title>Token Visualizer：免费 LLM Token 计数器，GPT-4o / GPT-4 提示词 token 计算</title>
+<meta name="description" content="免费的 LLM token 计数器：看清 GPT-4 和 GPT-4o 如何把提示词切成 token、哪几行最费 token、该删哪些词，省下多少是实测的。提供 Windows .exe。">
+<link rel="canonical" href="https://token-visualizer-app.vercel.app/zh/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Token Visualizer">
-<meta property="og:url" content="https://token-visualizer-app.vercel.app/">
-<meta property="og:title" content="Token Visualizer: free LLM token counter for prompts">
-<meta property="og:description" content="See how the tokenizer splits your prompt, which lines cost the most, and what to cut. The savings are measured by re-tokenizing, not guessed.">
+<meta property="og:url" content="https://token-visualizer-app.vercel.app/zh/">
+<meta property="og:title" content="Token Visualizer：免费 LLM Token 计数器，GPT-4o / GPT-4 提示词 token 计算">
+<meta property="og:description" content="看清分词器如何切分你的提示词、哪几行最费 token、该删什么。省下的 token 是重新分词实测出来的，不是估的。">
 <meta property="og:image" content="https://token-visualizer-app.vercel.app/assets/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Token Visualizer: a sentence split into colored GPT-4o tokens, 17 tokens before and 13 after the suggested fix">
+<meta property="og:image:alt" content="Token Visualizer：一句话被切成彩色的 GPT-4o token，按建议修改前 17 个 token，修改后 13 个">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Token Visualizer: free LLM token counter for prompts">
-<meta name="twitter:description" content="See how GPT-4 and GPT-4o split your prompt into tokens and what to cut, with measured savings. Windows .exe, macOS, Linux.">
+<meta name="twitter:title" content="Token Visualizer：免费 LLM Token 计数器，GPT-4o / GPT-4 提示词 token 计算">
+<meta name="twitter:description" content="看清 GPT-4 和 GPT-4o 如何把提示词切成 token、该删什么，省下多少是实测的。支持 Windows .exe、macOS、Linux。">
 <meta name="twitter:image" content="https://token-visualizer-app.vercel.app/assets/og-image.png">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Token Visualizer","alternateName":"token-visualizer","description":"Command-line LLM token counter that shows how OpenAI tokenizers (GPT-4, GPT-4o, GPT-3.5) split a prompt into tokens, counts tokens per line, suggests shorter phrasings and measures the savings by re-tokenizing.","url":"https://token-visualizer-app.vercel.app/","codeRepository":"https://gitlab.com/mattbusel/Token-Visualizer","programmingLanguage":"Python","license":"https://opensource.org/licenses/MIT","applicationCategory":"DeveloperApplication","operatingSystem":"Windows, macOS, Linux","downloadUrl":"https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe","softwareVersion":"0.3.1","image":"https://token-visualizer-app.vercel.app/assets/og-image.png","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Matthew Busel","url":"https://gitlab.com/mattbusel"}}
@@ -77,22 +77,22 @@ footer{padding:30px 0 50px;border-top:1px solid var(--rule);font-size:14.5px;col
 <link rel="alternate" hreflang="ja" href="https://token-visualizer-app.vercel.app/ja/">
 <link rel="alternate" hreflang="ko" href="https://token-visualizer-app.vercel.app/ko/">
 <link rel="alternate" hreflang="x-default" href="https://token-visualizer-app.vercel.app/">
-<meta property="og:locale" content="en_US">
-<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
 <meta property="og:locale:alternate" content="ja_JP">
 <meta property="og:locale:alternate" content="ko_KR">
 <style>.i18n-switch{display:block!important;position:relative;z-index:40;box-sizing:border-box;max-width:1200px;margin:0 auto!important;padding:6px 16px 0!important;border:0!important;background:none!important;text-align:right!important;font:13px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif!important;letter-spacing:normal!important;text-transform:none!important;opacity:.8}.i18n-switch a,.i18n-switch span{display:inline!important;margin:0!important;padding:0!important;font:inherit!important;color:inherit!important;background:none!important;border:0!important}.i18n-switch a{text-decoration:underline!important;text-underline-offset:2px}.i18n-switch [aria-current]{font-weight:600!important}</style>
 <!-- /i18n -->
 </head>
 <body>
-<div class="i18n-switch" role="navigation" aria-label="Language"><span aria-current="true">English</span> | <a href="zh/" hreflang="zh-CN" lang="zh-CN">简体中文</a> | <a href="ja/" hreflang="ja" lang="ja">日本語</a> | <a href="ko/" hreflang="ko" lang="ko">한국어</a></div>
+<div class="i18n-switch" role="navigation" aria-label="语言"><a href="../" hreflang="en" lang="en">English</a> | <span aria-current="true">简体中文</span> | <a href="../ja/" hreflang="ja" lang="ja">日本語</a> | <a href="../ko/" hreflang="ko" lang="ko">한국어</a></div>
 <div class="wrap">
 <nav aria-label="Primary">
   <a class="brand" href="./">token-visualizer</a>
   <ul>
-    <li><a href="#how">How it works</a></li>
-    <li><a href="#examples">Examples</a></li>
-    <li><a href="#install">Install</a></li>
+    <li><a href="#how">工作原理</a></li>
+    <li><a href="#examples">示例</a></li>
+    <li><a href="#install">安装</a></li>
     <li><a href="https://gitlab.com/mattbusel/Token-Visualizer">GitHub</a></li>
   </ul>
 </nav>
@@ -101,48 +101,48 @@ footer{padding:30px 0 50px;border-top:1px solid var(--rule);font-size:14.5px;col
 <main>
 <header class="wrap">
   <h1>Token Visualizer</h1>
-  <div class="chips" aria-label="The sentence 'In order to help you, due to the fact' split into GPT-4 tokens"><span>In</span><span> order</span><span> to</span><span> help</span><span> you</span><span>,</span><span> due</span><span> to</span><span> the</span><span> fact</span></div>
-  <p class="lede">A free LLM token counter. See how GPT-4 or GPT-4o chops your prompt into tokens, which lines cost the most, and which wordy phrases to cut. The savings are measured by running the shorter text through the same tokenizer, not guessed.</p>
+  <div class="chips" aria-label="句子 'In order to help you, due to the fact' 被切成的 GPT-4 token"><span>In</span><span> order</span><span> to</span><span> help</span><span> you</span><span>,</span><span> due</span><span> to</span><span> the</span><span> fact</span></div>
+  <p class="lede">免费的 LLM token 计数器。看清 GPT-4 或 GPT-4o 如何把你的提示词切成 token、哪几行最费 token、哪些啰嗦的短语该删。省下多少，是把精简后的文本交给同一个分词器重新跑一遍实测出来的，不是估的。</p>
   <div class="cta">
-    <a class="btn go" href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe">Download for Windows (.exe)</a>
-    <a class="btn" href="#install">macOS and Linux</a>
+    <a class="btn go" href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe">下载 Windows 版 (.exe)</a>
+    <a class="btn" href="#install">macOS 和 Linux</a>
   </div>
-  <p class="small">Free, MIT licensed, works offline. Unsigned: if Windows SmartScreen asks, click <b>More info</b>, then <b>Run anyway</b>.</p>
+  <p class="small">免费，MIT 许可证，可离线使用。程序未签名：如果 Windows SmartScreen 弹出提示，先点<b>更多信息</b>，再点<b>仍要运行</b>。</p>
   <figure style="margin-top:26px">
-    <img src="assets/demo.gif" width="900" height="775" alt="A real terminal session: token-visualizer analyzes a 5-line support prompt with the GPT-4o tokenizer, shows each token as a colored chip, and measures 70 to 61 tokens after the suggested cuts.">
-    <figcaption>A real run on a 5-line support-bot prompt with the GPT-4o tokenizer: 70 tokens, 61 after the suggested cuts.</figcaption>
+    <img src="../assets/demo.gif" width="900" height="775" alt="真实的终端录屏：token-visualizer 用 GPT-4o 分词器分析一段 5 行的客服提示词，把每个 token 显示成一个彩色小块，并实测出按建议删减后从 70 个 token 降到 61 个。">
+    <figcaption>用 GPT-4o 分词器真实运行一段 5 行的客服机器人提示词：70 个 token，按建议删减后 61 个。</figcaption>
   </figure>
 </header>
 
 <section id="how" aria-labelledby="how-h">
 <div class="wrap">
-  <h2 id="how-h">How it works</h2>
+  <h2 id="how-h">工作原理</h2>
   <figure>
-    <img src="assets/how-it-works.svg" width="1200" height="1180" loading="lazy" alt="Diagram from a real run with the GPT-4o tokenizer. Step 1: a line of the prompt is cut into 16 numbered tokens. Step 2: each line is counted, 12, 16, 17, 18 and 7 tokens, 70 in total, about $0.0021. Step 3: wordy phrases are swapped for short ones and the text is tokenized again: 70 to 61 tokens, 13 percent shorter.">
+    <img src="../assets/how-it-works.svg" width="1200" height="1180" loading="lazy" alt="基于 GPT-4o 分词器一次真实运行的示意图。第 1 步：提示词的一行被切成 16 个带编号的 token。第 2 步：逐行计数，分别是 12、16、17、18 和 7 个 token，共 70 个，约 $0.0021。第 3 步：把啰嗦的短语换成简短的说法，再重新分词：从 70 个降到 61 个 token，缩短 13%。">
   </figure>
   <div class="grid" style="margin-top:22px">
-    <div class="card"><h3>1. Cut</h3><p>The model's own tokenizer (<code>tiktoken</code>) splits each line into tokens, the numbered pieces a model reads and bills for.</p></div>
-    <div class="card"><h3>2. Count</h3><p>Every line gets a token count, green under 25, yellow 25 to 50, red over 50, and the prompt gets a total and a rough cost.</p></div>
-    <div class="card"><h3>3. Measure</h3><p>It swaps wordy phrases for short ones, squeezes extra whitespace, tokenizes the new text again and reports the real difference.</p></div>
+    <div class="card"><h3>1. 切分</h3><p>用模型自己的分词器（<code>tiktoken</code>）把每一行切成 token，也就是模型实际读取、按量计费的那些带编号的小块。</p></div>
+    <div class="card"><h3>2. 计数</h3><p>每一行都标出 token 数：25 以下为绿色，25 到 50 为黄色，超过 50 为红色；整段提示词给出总数和大致费用。</p></div>
+    <div class="card"><h3>3. 实测</h3><p>把啰嗦的短语换成简短的说法、压缩多余空白，再对新文本重新分词，报告真实的差值。</p></div>
   </div>
 </div>
 </section>
 
 <section id="examples" aria-labelledby="ex-h">
 <div class="wrap">
-  <h2 id="ex-h">Examples</h2>
-  <p>Real output from version 0.3.1.</p>
-  <h3>One wordy sentence</h3>
+  <h2 id="ex-h">示例</h2>
+  <p>以下均为 0.3.1 版的真实输出。</p>
+  <h3>一句啰嗦的话</h3>
 <pre><code>$ echo "In order to help you, due to the fact that you asked." | token-visualizer
   Total tokens: 14
   ...
   Applying the phrase and whitespace fixes: 14 → 8 tokens (-6, 43%)</code></pre>
-  <h3>Exact token boundaries</h3>
+  <h3>精确的 token 边界</h3>
 <pre><code>TOKEN BREAKDOWN:
   [0:In] [1: order] [2: to] [3: help] [4: you] [5:,] [6: due] [7: to] [8: the]
   [9: fact] [10: that] [11: you] [12: asked] [13:.\n]</code></pre>
-  <p class="small">Most tokens carry the space in front of the word, so <code> order</code> and <code>order</code> are different tokens.</p>
-  <h3>A 5-line support prompt</h3>
+  <p class="small">大多数 token 会带上单词前面的空格，所以 <code> order</code> 和 <code>order</code> 是两个不同的 token。</p>
+  <h3>一段 5 行的客服提示词</h3>
 <pre><code>$ token-visualizer examples/support-prompt.txt -m gpt-4o
   Verbose phrases found:
      'in order to' → 'to'
@@ -155,28 +155,28 @@ MEASURED SAVINGS
 
 <section id="install" aria-labelledby="in-h">
 <div class="wrap">
-  <h2 id="in-h">Install</h2>
+  <h2 id="in-h">安装</h2>
   <div class="tablewrap"><table>
-    <tr><th>Platform</th><th>How</th></tr>
-    <tr><td>Windows</td><td><a href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe">Download the .exe</a>, double-click it, paste your prompt</td></tr>
-    <tr><td>Windows (Scoop)</td><td><code>scoop bucket add mattbusel https://gitlab.com/mattbusel/scoop-bucket; scoop install mattbusel/token-visualizer</code></td></tr>
-    <tr><td>macOS, Linux (Homebrew)</td><td><code>brew install mattbusel/tap/token-visualizer</code></td></tr>
-    <tr><td>macOS, Linux (script)</td><td><code>curl -fsSL https://gitlab.com/mattbusel/Token-Visualizer/-/raw/main/install.sh | sh</code></td></tr>
-    <tr><td>Any OS with Python 3.8+</td><td><code>pipx install git+https://gitlab.com/mattbusel/Token-Visualizer</code></td></tr>
+    <tr><th>平台</th><th>方式</th></tr>
+    <tr><td>Windows</td><td><a href="https://gitlab.com/mattbusel/Token-Visualizer/-/releases/permalink/latest/downloads/token-visualizer-windows-x86_64.exe">下载 .exe</a>，双击运行，粘贴你的提示词</td></tr>
+    <tr><td>Windows（Scoop）</td><td><code>scoop bucket add mattbusel https://gitlab.com/mattbusel/scoop-bucket; scoop install mattbusel/token-visualizer</code></td></tr>
+    <tr><td>macOS、Linux（Homebrew）</td><td><code>brew install mattbusel/tap/token-visualizer</code></td></tr>
+    <tr><td>macOS、Linux（安装脚本）</td><td><code>curl -fsSL https://gitlab.com/mattbusel/Token-Visualizer/-/raw/main/install.sh | sh</code></td></tr>
+    <tr><td>任何装有 Python 3.8+ 的系统</td><td><code>pipx install git+https://gitlab.com/mattbusel/Token-Visualizer</code></td></tr>
   </table></div>
-  <h3 style="margin-top:26px">Use it in 3 steps</h3>
+  <h3 style="margin-top:26px">3 步上手</h3>
   <ol class="steps">
-    <li><b>Get it</b> with any line above.</li>
-    <li><b>Run it on your prompt:</b> <code>token-visualizer prompt.txt -m gpt-4o</code>, or double-click the .exe and paste (end with Ctrl+Z, then Enter).</li>
-    <li><b>Cut what it flags</b> and run it again to see the new count.</li>
+    <li><b>安装：</b>用上面任意一行命令即可。</li>
+    <li><b>分析你的提示词：</b><code>token-visualizer prompt.txt -m gpt-4o</code>，或者双击 .exe 后粘贴（最后按 Ctrl+Z，再按 Enter）。</li>
+    <li><b>删掉它标出的内容</b>，再运行一次，看看新的 token 数。</li>
   </ol>
-  <p class="small">Claude has no public tokenizer, so <code>claude-3-sonnet</code> falls back to whitespace splitting and says so. For Llama and other open models, pass a Hugging Face model ID (from source, with <code>transformers</code>). Full options: <a href="https://gitlab.com/mattbusel/Token-Visualizer/-/blob/main/docs/REFERENCE.md">reference</a>.</p>
+  <p class="small">Claude 没有公开的分词器，所以 <code>claude-3-sonnet</code> 会退回到按空白切分，并会明确提示。Llama 等开源模型可以传入 Hugging Face 模型 ID（需从源码安装并装上 <code>transformers</code>）。全部选项见<a href="https://gitlab.com/mattbusel/Token-Visualizer/-/blob/main/docs/REFERENCE.md">参考文档</a>。</p>
 </div>
 </section>
 </main>
 
 <footer>
-<div class="wrap">Token Visualizer is MIT licensed. Built by <a href="https://gitlab.com/mattbusel">Matthew Busel</a>. <a href="https://gitlab.com/mattbusel/Token-Visualizer">Source on GitHub</a> · <a href="https://gitlab.com/mattbusel/Token-Visualizer/-/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://mattbusel.vercel.app/">Hire the author</a></div>
+<div class="wrap">Token Visualizer 采用 MIT 许可证。作者 <a href="https://gitlab.com/mattbusel">Matthew Busel</a>。<a href="https://gitlab.com/mattbusel/Token-Visualizer">GitHub 上的源码</a> · <a href="https://gitlab.com/mattbusel/Token-Visualizer/-/blob/main/CHANGELOG.md">更新日志</a> · <a href="https://mattbusel.vercel.app/">聘请作者</a></div>
 </footer>
 </body>
 </html>
