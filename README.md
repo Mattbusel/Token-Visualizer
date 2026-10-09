@@ -1,5 +1,7 @@
 # Token Visualizer
 
+English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
+
 **See how an AI model like ChatGPT chops your prompt into tokens, which lines cost the most, and which wordy phrases to cut, with the savings measured, not guessed.**
 
 For anyone who writes prompts and pays per token: developers, prompt engineers, and anyone curious why a sentence "costs" what it does. A free LLM token counter for the terminal, using OpenAI's real tokenizers (GPT-4, GPT-4o, GPT-3.5) offline.
