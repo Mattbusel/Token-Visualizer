@@ -12,6 +12,10 @@ No install: try it in the browser at https://gpt-token-counter.vercel.app
 
 <p align="center"><img src="assets/demo.gif" alt="A real terminal session: token-visualizer analyzes a 5-line support prompt with the GPT-4o tokenizer, shows each token as a colored chip, and measures 70 to 61 tokens after the suggested cuts." width="900"></p>
 
+## No install? Use the browser version
+
+The free [token counter for GPT, Claude and Gemini](https://tensorust.com/tools/token-counter/?utm_source=github&utm_medium=readme&utm_campaign=token-visualizer) runs in your browser with nothing to download. To turn token counts into money, use the [LLM API cost calculator](https://tensorust.com/tools/llm-api-cost/?utm_source=github&utm_medium=readme&utm_campaign=token-visualizer).
+
 ## Install
 
 **Linux** (x86_64, Ubuntu 20.04+ / Debian 11+). One line, no dependencies, installs to `~/.local/bin`:
